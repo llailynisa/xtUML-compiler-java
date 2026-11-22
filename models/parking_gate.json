@@ -1,0 +1,370 @@
+{
+  "package": "parking",
+  "enums": [
+    {
+      "name": "SlotStatus",
+      "values": [
+        "FREE",
+        "OCCUPIED",
+        "RESERVED"
+      ]
+    },
+    {
+      "name": "VehicleType",
+      "values": [
+        "CAR",
+        "MOTORCYCLE"
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "name": "ParkingLot",
+      "key_letters": "LOT",
+      "is_abstract": false,
+      "attributes": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "capacity",
+          "type": "integer"
+        }
+      ],
+      "operations": []
+    },
+    {
+      "name": "ParkingSlot",
+      "key_letters": "SLOT",
+      "is_abstract": false,
+      "attributes": [
+        {
+          "name": "number",
+          "type": "integer"
+        },
+        {
+          "name": "status",
+          "type": "enum:SlotStatus"
+        }
+      ],
+      "operations": []
+    },
+    {
+      "name": "Gate",
+      "key_letters": "GATE",
+      "is_abstract": true,
+      "attributes": [
+        {
+          "name": "gateId",
+          "type": "string"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean"
+        }
+      ],
+      "operations": [
+        {
+          "name": "handleVehicle",
+          "params": [
+            {
+              "name": "veh",
+              "type": "inst_ref:VEH"
+            }
+          ],
+          "return_type": "void",
+          "is_abstract": true,
+          "body": []
+        }
+      ],
+      "state_machine": {
+        "initial": "Closed",
+        "states": [
+          {
+            "name": "Closed",
+            "action": [
+              "self.isOpen = false;"
+            ]
+          },
+          {
+            "name": "Opening",
+            "action": [
+              "generate Gate:BarrierUp() to self;"
+            ]
+          },
+          {
+            "name": "Open",
+            "action": [
+              "self.isOpen = true;"
+            ]
+          },
+          {
+            "name": "Closing",
+            "action": [
+              "generate Gate:BarrierDown() to self;"
+            ]
+          }
+        ],
+        "events": [
+          {
+            "name": "VehicleDetected",
+            "params": []
+          },
+          {
+            "name": "BarrierUp",
+            "params": []
+          },
+          {
+            "name": "VehicleCleared",
+            "params": []
+          },
+          {
+            "name": "BarrierDown",
+            "params": []
+          }
+        ],
+        "transitions": [
+          {
+            "source": "Closed",
+            "event": "VehicleDetected",
+            "target": "Opening"
+          },
+          {
+            "source": "Opening",
+            "event": "BarrierUp",
+            "target": "Open"
+          },
+          {
+            "source": "Open",
+            "event": "VehicleCleared",
+            "target": "Closing"
+          },
+          {
+            "source": "Closing",
+            "event": "BarrierDown",
+            "target": "Closed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EntryGate",
+      "key_letters": "ENTRY",
+      "is_abstract": false,
+      "attributes": [],
+      "operations": [
+        {
+          "name": "handleVehicle",
+          "params": [
+            {
+              "name": "veh",
+              "type": "inst_ref:VEH"
+            }
+          ],
+          "return_type": "void",
+          "is_abstract": false,
+          "body": [
+            "select any slot from instances of SLOT where (selected.status == SlotStatus::FREE);",
+            "if (not_empty slot)",
+            "  slot.status = SlotStatus::OCCUPIED;",
+            "  create object instance session of SESS;",
+            "  session.sessionId = \"SESS-001\";",
+            "  session.isPaid = false;",
+            "  relate veh to slot across R4 using session;",
+            "  generate Gate:VehicleDetected() to self;",
+            "end if;"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ExitGate",
+      "key_letters": "EXIT",
+      "is_abstract": false,
+      "attributes": [],
+      "operations": [
+        {
+          "name": "handleVehicle",
+          "params": [
+            {
+              "name": "veh",
+              "type": "inst_ref:VEH"
+            }
+          ],
+          "return_type": "void",
+          "is_abstract": false,
+          "body": [
+            "select one session related by veh->R4[ParkingSession];",
+            "if (not_empty session)",
+            "  if (session.isPaid == true)",
+            "    select one slot related by veh->R4[ParkingSlot];",
+            "    if (not_empty slot)",
+            "      slot.status = SlotStatus::FREE;",
+            "    end if;",
+            "    generate ParkingSession:Exited() to session;",
+            "    generate Gate:VehicleDetected() to self;",
+            "  end if;",
+            "end if;"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Vehicle",
+      "key_letters": "VEH",
+      "is_abstract": false,
+      "attributes": [
+        {
+          "name": "plateNumber",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "type": "enum:VehicleType"
+        }
+      ],
+      "operations": []
+    },
+    {
+      "name": "ParkingSession",
+      "key_letters": "SESS",
+      "is_abstract": false,
+      "attributes": [
+        {
+          "name": "sessionId",
+          "type": "string"
+        },
+        {
+          "name": "isPaid",
+          "type": "boolean"
+        }
+      ],
+      "operations": [],
+      "state_machine": {
+        "initial": "Active",
+        "states": [
+          {
+            "name": "Active",
+            "action": [
+              "self.isPaid = false;"
+            ]
+          },
+          {
+            "name": "Paid",
+            "action": [
+              "self.isPaid = true;"
+            ]
+          },
+          {
+            "name": "Closed",
+            "action": []
+          }
+        ],
+        "events": [
+          {
+            "name": "PaymentConfirmed",
+            "params": []
+          },
+          {
+            "name": "Exited",
+            "params": []
+          }
+        ],
+        "transitions": [
+          {
+            "source": "Active",
+            "event": "PaymentConfirmed",
+            "target": "Paid"
+          },
+          {
+            "source": "Paid",
+            "event": "Exited",
+            "target": "Closed"
+          }
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "rel_id": "R1",
+      "kind": "binary",
+      "ends": [
+        {
+          "class_name": "ParkingLot",
+          "multiplicity": "1",
+          "phrase": "contains"
+        },
+        {
+          "class_name": "ParkingSlot",
+          "multiplicity": "0..*",
+          "phrase": "is in"
+        }
+      ]
+    },
+    {
+      "rel_id": "R2",
+      "kind": "binary",
+      "ends": [
+        {
+          "class_name": "ParkingLot",
+          "multiplicity": "1",
+          "phrase": "operates"
+        },
+        {
+          "class_name": "Gate",
+          "multiplicity": "1..*",
+          "phrase": "operated by"
+        }
+      ]
+    },
+    {
+      "rel_id": "R4",
+      "kind": "associative",
+      "assoc_class": "ParkingSession",
+      "ends": [
+        {
+          "class_name": "Vehicle",
+          "multiplicity": "0..*",
+          "phrase": "parks in"
+        },
+        {
+          "class_name": "ParkingSlot",
+          "multiplicity": "0..*",
+          "phrase": "hosts"
+        }
+      ]
+    },
+    {
+      "rel_id": "R5",
+      "kind": "generalization",
+      "supertype": "Gate",
+      "subtypes": [
+        "EntryGate",
+        "ExitGate"
+      ]
+    }
+  ],
+  "scenario": [
+    "create object instance lot of LOT;",
+    "lot.name = \"Central Parking\";",
+    "lot.capacity = 50;",
+    "create object instance slot1 of SLOT;",
+    "slot1.number = 1;",
+    "slot1.status = SlotStatus::FREE;",
+    "relate lot to slot1 across R1;",
+    "create object instance entry of ENTRY;",
+    "entry.gateId = \"GATE-IN-1\";",
+    "entry.isOpen = false;",
+    "relate lot to entry across R2;",
+    "create object instance exitGate of EXIT;",
+    "exitGate.gateId = \"GATE-OUT-1\";",
+    "exitGate.isOpen = false;",
+    "relate lot to exitGate across R2;",
+    "create object instance car of VEH;",
+    "car.plateNumber = \"AB 1234 XY\";",
+    "car.type = VehicleType::CAR;",
+    "entry.handleVehicle(veh: car);"
+  ]
+}

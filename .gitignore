@@ -1,0 +1,24 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python cache & build
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Pytest cache & temp
+.pytest_cache/
+.pytest_tmp/
+
+# Hasil generate & bytecode Java lokal
+out/
+*.class
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
