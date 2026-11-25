@@ -1,0 +1,108 @@
+{
+  "package": "assoctest",
+  "enums": [],
+  "classes": [
+    {
+      "name": "Student",
+      "key_letters": "STU",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "studentId", "type": "string" },
+        { "name": "name", "type": "string" }
+      ],
+      "operations": []
+    },
+    {
+      "name": "Course",
+      "key_letters": "CRS",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "courseCode", "type": "string" },
+        { "name": "title", "type": "string" }
+      ],
+      "operations": []
+    },
+    {
+      "name": "Enrollment",
+      "key_letters": "ENR",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "enrolledDate", "type": "string" },
+        { "name": "grade", "type": "string" }
+      ],
+      "operations": [
+        {
+          "name": "assignGrade",
+          "return_type": "void",
+          "params": [
+            { "name": "newGrade", "type": "string" }
+          ],
+          "body": "self.grade = newGrade;"
+        }
+      ],
+      "state_machine": {
+        "initial": "Enrolled",
+        "states": [
+          {
+            "name": "Enrolled",
+            "action": "self.grade = \"IN_PROGRESS\";"
+          },
+          {
+            "name": "Completed",
+            "action": "self.grade = \"A\";"
+          },
+          {
+            "name": "Dropped",
+            "action": "self.grade = \"W\";"
+          }
+        ],
+        "events": ["FinishCourse", "DropCourse"],
+        "transitions": [
+          {
+            "from": "Enrolled",
+            "event": "FinishCourse",
+            "to": "Completed"
+          },
+          {
+            "from": "Enrolled",
+            "event": "DropCourse",
+            "to": "Dropped"
+          }
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R1",
+      "kind": "associative",
+      "assoc_class": "Enrollment",
+      "ends": [
+        {
+          "class": "Student",
+          "multiplicity": "0..*",
+          "phrase": "enrolls in"
+        },
+        {
+          "class": "Course",
+          "multiplicity": "0..*",
+          "phrase": "has enrolled"
+        }
+      ]
+    }
+  ],
+  "scenario": [
+    "create object instance student of STU;",
+    "student.studentId = \"STU-001\";",
+    "student.name = \"Ayu\";",
+    "create object instance course of CRS;",
+    "course.courseCode = \"CS101\";",
+    "course.title = \"Intro to Computing\";",
+    "create object instance enrollment of ENR;",
+    "enrollment.enrolledDate = \"2026-11-25\";",
+    "enrollment.grade = \"IN_PROGRESS\";",
+    "relate student to course across R1 using enrollment;",
+    "enrollment.assignGrade(newGrade: \"B\");",
+    "generate Enrollment:FinishCourse() to enrollment;"
+  ]
+}

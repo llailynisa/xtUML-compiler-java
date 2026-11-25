@@ -1,0 +1,76 @@
+{
+  "package": "smtest",
+  "enums": [
+    {
+      "name": "DoorLockState",
+      "values": ["LOCKED", "UNLOCKED", "ALARM"]
+    }
+  ],
+  "classes": [
+    {
+      "name": "SmartDoor",
+      "key_letters": "DOOR",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "doorId", "type": "string" },
+        { "name": "lockStatus", "type": "enum:DoorLockState" }
+      ],
+      "operations": [],
+      "state_machine": {
+        "initial": "Locked",
+        "states": [
+          {
+            "name": "Locked",
+            "action": "self.lockStatus = DoorLockState::LOCKED;"
+          },
+          {
+            "name": "Unlocked",
+            "action": "self.lockStatus = DoorLockState::UNLOCKED;"
+          },
+          {
+            "name": "Alarm",
+            "action": "self.lockStatus = DoorLockState::ALARM;"
+          }
+        ],
+        "events": [
+          "ValidPinEntered",
+          "DoorClosed",
+          "MaxRetriesExceeded",
+          "AdminReset"
+        ],
+        "transitions": [
+          {
+            "from": "Locked",
+            "event": "ValidPinEntered",
+            "to": "Unlocked"
+          },
+          {
+            "from": "Unlocked",
+            "event": "DoorClosed",
+            "to": "Locked"
+          },
+          {
+            "from": "Locked",
+            "event": "MaxRetriesExceeded",
+            "to": "Alarm"
+          },
+          {
+            "from": "Alarm",
+            "event": "AdminReset",
+            "to": "Locked"
+          }
+        ]
+      }
+    }
+  ],
+  "relationships": [],
+  "scenario": [
+    "create object instance door of DOOR;",
+    "door.doorId = \"DOOR-001\";",
+    "door.lockStatus = DoorLockState::LOCKED;",
+    "generate SmartDoor:ValidPinEntered() to door;",
+    "generate SmartDoor:DoorClosed() to door;",
+    "generate SmartDoor:MaxRetriesExceeded() to door;",
+    "generate SmartDoor:AdminReset() to door;"
+  ]
+}

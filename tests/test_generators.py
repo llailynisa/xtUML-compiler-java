@@ -39,6 +39,20 @@ class Generators(unittest.TestCase):
         self.assertIn("public void setStatus(SlotStatus value)", slot)
         self.assertIn('return "SLOT";', slot)
 
+    def test_java_util_imports_only_when_used(self):
+        self.assertNotIn("import java.util", F["ExitGate.java"])
+
+        from xtuml_java.loader.json_loader import load_from_text
+        res = load_from_text(
+            '{"package":"p","classes":['
+            '{"name":"A","attributes":[{"name":"items","type":"inst_ref_set:B"}]},'
+            '{"name":"B"}]}'
+        )
+        self.assertTrue(res.ok)
+        code = generate_project(res.model).files["A.java"]
+        self.assertIn("import java.util.List;", code)
+        self.assertIn("import java.util.ArrayList;", code)
+
     def test_generalization(self):
         self.assertIn("public abstract class Gate extends XtumlObject", F["Gate.java"])
         self.assertIn("public abstract void handleVehicle(Vehicle veh);", F["Gate.java"])
@@ -68,6 +82,7 @@ class Generators(unittest.TestCase):
 
     def test_main_contains_scenario_and_violation_handler(self):
         m = F["Main.java"]
+        self.assertNotIn("import java.util", m)
         self.assertIn("ModelSetup.init();", m)
         self.assertIn("catch (CardinalityViolationException ex)", m)
         self.assertIn("Runtime.run();", m)

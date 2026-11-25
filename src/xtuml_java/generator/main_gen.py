@@ -23,8 +23,6 @@ def generate_main(model: Model, todos: Optional[List[str]] = None) -> str:
     lines: List[str] = [
         f"package {model.package};",
         "",
-        "import java.util.*;",
-        "",
         "/**",
         f" * Titik masuk simulasi model xtUML: {model.package}",
         " */",
@@ -50,5 +48,13 @@ def generate_main(model: Model, todos: Optional[List[str]] = None) -> str:
         "    }",
         "}",
     ])
+
+    imports: List[str] = []
+    if any("List<" in line for line in lines):
+        imports.append("import java.util.List;")
+    if any("ArrayList<" in line for line in lines):
+        imports.append("import java.util.ArrayList;")
+    if imports:
+        lines[2:2] = imports + [""]
 
     return "\n".join(lines) + "\n"

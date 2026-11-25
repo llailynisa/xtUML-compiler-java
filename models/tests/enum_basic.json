@@ -1,0 +1,83 @@
+{
+  "package": "enumtest",
+  "enums": [
+    {
+      "name": "OrderStatus",
+      "values": ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"]
+    },
+    {
+      "name": "PriorityLevel",
+      "values": ["LOW", "MEDIUM", "HIGH"]
+    }
+  ],
+  "classes": [
+    {
+      "name": "Order",
+      "key_letters": "ORD",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "orderId", "type": "string" },
+        { "name": "status", "type": "enum:OrderStatus" },
+        { "name": "priority", "type": "enum:PriorityLevel" }
+      ],
+      "operations": [
+        {
+          "name": "markShipped",
+          "return_type": "void",
+          "params": [],
+          "body": "self.status = OrderStatus::SHIPPED;"
+        }
+      ],
+      "state_machine": {
+        "initial": "Pending",
+        "states": [
+          {
+            "name": "Pending",
+            "action": "self.status = OrderStatus::PENDING;"
+          },
+          {
+            "name": "Confirmed",
+            "action": "self.status = OrderStatus::CONFIRMED;"
+          },
+          {
+            "name": "Shipped",
+            "action": "self.status = OrderStatus::SHIPPED;"
+          },
+          {
+            "name": "Delivered",
+            "action": "self.status = OrderStatus::DELIVERED;"
+          }
+        ],
+        "events": ["ConfirmOrder", "ShipOrder", "DeliverOrder"],
+        "transitions": [
+          {
+            "from": "Pending",
+            "event": "ConfirmOrder",
+            "to": "Confirmed"
+          },
+          {
+            "from": "Confirmed",
+            "event": "ShipOrder",
+            "to": "Shipped"
+          },
+          {
+            "from": "Shipped",
+            "event": "DeliverOrder",
+            "to": "Delivered"
+          }
+        ]
+      }
+    }
+  ],
+  "relationships": [],
+  "scenario": [
+    "create object instance order of ORD;",
+    "order.orderId = \"ORD-001\";",
+    "order.status = OrderStatus::PENDING;",
+    "order.priority = PriorityLevel::HIGH;",
+    "order.markShipped();",
+    "generate Order:ConfirmOrder() to order;",
+    "generate Order:ShipOrder() to order;",
+    "generate Order:DeliverOrder() to order;"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "package": "gentest",
+  "enums": [],
+  "classes": [
+    {
+      "name": "PaymentMethod",
+      "key_letters": "PAY",
+      "is_abstract": true,
+      "attributes": [
+        { "name": "accountId", "type": "string" },
+        { "name": "amount", "type": "integer" }
+      ],
+      "operations": [
+        {
+          "name": "processPayment",
+          "return_type": "boolean",
+          "is_abstract": true,
+          "params": [],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "CreditCard",
+      "key_letters": "CC",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "cardNumber", "type": "string" },
+        { "name": "isAuthorized", "type": "boolean" }
+      ],
+      "operations": [
+        {
+          "name": "processPayment",
+          "return_type": "boolean",
+          "is_abstract": false,
+          "params": [],
+          "body": "return true;"
+        }
+      ],
+      "state_machine": {
+        "initial": "Unverified",
+        "states": [
+          {
+            "name": "Unverified",
+            "action": "self.isAuthorized = false;"
+          },
+          {
+            "name": "Authorized",
+            "action": "self.isAuthorized = true;"
+          },
+          {
+            "name": "Declined",
+            "action": "self.isAuthorized = false;"
+          }
+        ],
+        "events": ["ApproveCard", "RejectCard"],
+        "transitions": [
+          {
+            "from": "Unverified",
+            "event": "ApproveCard",
+            "to": "Authorized"
+          },
+          {
+            "from": "Unverified",
+            "event": "RejectCard",
+            "to": "Declined"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BankTransfer",
+      "key_letters": "BT",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "iban", "type": "string" }
+      ],
+      "operations": [
+        {
+          "name": "processPayment",
+          "return_type": "boolean",
+          "is_abstract": false,
+          "params": [],
+          "body": "return true;"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R1",
+      "kind": "generalization",
+      "supertype": "PaymentMethod",
+      "subtypes": ["CreditCard", "BankTransfer"]
+    }
+  ],
+  "scenario": [
+    "create object instance card of CC;",
+    "card.accountId = \"ACC-001\";",
+    "card.amount = 125;",
+    "card.cardNumber = \"CARD-001\";",
+    "card.isAuthorized = false;",
+    "create object instance transfer of BT;",
+    "transfer.accountId = \"ACC-002\";",
+    "transfer.amount = 250;",
+    "transfer.iban = \"IBAN-001\";",
+    "card.processPayment();",
+    "transfer.processPayment();",
+    "generate CreditCard:ApproveCard() to card;"
+  ]
+}

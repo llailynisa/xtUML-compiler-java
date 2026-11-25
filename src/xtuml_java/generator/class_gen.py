@@ -27,7 +27,7 @@ def _operation(model: Model, cls: XtClass, op: Operation, todos: Optional[List[s
 
 
 def generate_class(model: Model, cls: XtClass, todos: Optional[List[str]] = None) -> str:
-    L: List[str] = [f"package {model.package};", "", "import java.util.*;", ""]
+    L: List[str] = [f"package {model.package};", ""]
     doc = [f"Class xtUML: {cls.name} ({cls.key_letters})"] + relation_gen.relationship_comments(model, cls)
     L.append("/**")
     L += [f" * {d}" for d in doc]
@@ -51,4 +51,11 @@ def generate_class(model: Model, cls: XtClass, todos: Optional[List[str]] = None
     while L and L[-1] == "":
         L.pop()
     L.append("}")
+    imports: List[str] = []
+    if any("List<" in line for line in L):
+        imports.append("import java.util.List;")
+    if any("ArrayList<" in line for line in L):
+        imports.append("import java.util.ArrayList;")
+    if imports:
+        L[2:2] = imports + [""]
     return "\n".join(L) + "\n"

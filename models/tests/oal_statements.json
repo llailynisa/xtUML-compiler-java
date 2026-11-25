@@ -1,0 +1,107 @@
+{
+  "package": "oaltest",
+  "enums": [
+    {
+      "name": "TicketStatus",
+      "values": ["OPEN", "IN_PROGRESS", "RESOLVED"]
+    }
+  ],
+  "classes": [
+    {
+      "name": "Technician",
+      "key_letters": "TECH",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "techId", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "isAvailable", "type": "boolean" }
+      ],
+      "operations": []
+    },
+    {
+      "name": "Ticket",
+      "key_letters": "TCK",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "ticketId", "type": "string" },
+        { "name": "status", "type": "enum:TicketStatus" }
+      ],
+      "operations": [
+        {
+          "name": "assignAndStart",
+          "return_type": "void",
+          "params": [],
+          "body": "select any tech from instances of TECH;\nif (not_empty tech)\n  create object instance log of ALOG;\n  log.assignedAt = \"2026-11-24\";\n  relate tech to self across R1 using log;\n  tech.isAvailable = false;\n  self.status = TicketStatus::IN_PROGRESS;\n  generate Ticket:StartWork() to self;\nend if;\nunrecognized_custom_oal_macro self;"
+        }
+      ],
+      "state_machine": {
+        "initial": "Open",
+        "states": [
+          {
+            "name": "Open",
+            "action": "self.status = TicketStatus::OPEN;"
+          },
+          {
+            "name": "InProgress",
+            "action": "self.status = TicketStatus::IN_PROGRESS;"
+          },
+          {
+            "name": "Resolved",
+            "action": "self.status = TicketStatus::RESOLVED;"
+          }
+        ],
+        "events": ["StartWork", "CompleteWork"],
+        "transitions": [
+          {
+            "from": "Open",
+            "event": "StartWork",
+            "to": "InProgress"
+          },
+          {
+            "from": "InProgress",
+            "event": "CompleteWork",
+            "to": "Resolved"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AssignmentLog",
+      "key_letters": "ALOG",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "assignedAt", "type": "string" }
+      ],
+      "operations": []
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R1",
+      "kind": "associative",
+      "assoc_class": "AssignmentLog",
+      "ends": [
+        {
+          "class": "Technician",
+          "multiplicity": "0..*",
+          "phrase": "handles"
+        },
+        {
+          "class": "Ticket",
+          "multiplicity": "0..*",
+          "phrase": "assigned to"
+        }
+      ]
+    }
+  ],
+  "scenario": [
+    "create object instance tech of TECH;",
+    "tech.techId = \"TECH-01\";",
+    "tech.name = \"Rina\";",
+    "tech.isAvailable = true;",
+    "create object instance ticket of TCK;",
+    "ticket.ticketId = \"TCK-001\";",
+    "ticket.status = TicketStatus::OPEN;",
+    "ticket.assignAndStart();"
+  ]
+}

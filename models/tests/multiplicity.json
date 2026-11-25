@@ -1,0 +1,115 @@
+{
+  "package": "multtest",
+  "enums": [],
+  "classes": [
+    {
+      "name": "Department",
+      "key_letters": "DEPT",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "deptId", "type": "string" },
+        { "name": "name", "type": "string" }
+      ],
+      "operations": []
+    },
+    {
+      "name": "Employee",
+      "key_letters": "EMP",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "empId", "type": "string" },
+        { "name": "fullName", "type": "string" }
+      ],
+      "operations": []
+    },
+    {
+      "name": "ParkingBadge",
+      "key_letters": "BDG",
+      "is_abstract": false,
+      "attributes": [
+        { "name": "badgeCode", "type": "string" },
+        { "name": "isActive", "type": "boolean" }
+      ],
+      "operations": [],
+      "state_machine": {
+        "initial": "Issued",
+        "states": [
+          {
+            "name": "Issued",
+            "action": "self.isActive = false;"
+          },
+          {
+            "name": "Active",
+            "action": "self.isActive = true;"
+          },
+          {
+            "name": "Revoked",
+            "action": "self.isActive = false;"
+          }
+        ],
+        "events": ["ActivateBadge", "RevokeBadge"],
+        "transitions": [
+          {
+            "from": "Issued",
+            "event": "ActivateBadge",
+            "to": "Active"
+          },
+          {
+            "from": "Active",
+            "event": "RevokeBadge",
+            "to": "Revoked"
+          }
+        ]
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R1",
+      "kind": "binary",
+      "ends": [
+        {
+          "class": "Department",
+          "multiplicity": "1",
+          "phrase": "employs"
+        },
+        {
+          "class": "Employee",
+          "multiplicity": "1..*",
+          "phrase": "works in"
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "kind": "binary",
+      "ends": [
+        {
+          "class": "Employee",
+          "multiplicity": "1",
+          "phrase": "holds"
+        },
+        {
+          "class": "ParkingBadge",
+          "multiplicity": "0..1",
+          "phrase": "assigned to"
+        }
+      ]
+    }
+  ],
+  "scenario": [
+    "create object instance department of DEPT;",
+    "department.deptId = \"D-001\";",
+    "department.name = \"Engineering\";",
+    "create object instance employee of EMP;",
+    "employee.empId = \"E-001\";",
+    "employee.fullName = \"Rafi\";",
+    "relate department to employee across R1;",
+    "create object instance badge of BDG;",
+    "badge.badgeCode = \"B-001\";",
+    "badge.isActive = false;",
+    "relate employee to badge across R2;",
+    "generate ParkingBadge:ActivateBadge() to badge;",
+    "generate ParkingBadge:RevokeBadge() to badge;"
+  ]
+}
